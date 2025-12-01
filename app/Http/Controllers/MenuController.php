@@ -89,7 +89,34 @@ class MenuController extends Controller
      */
 
     public function getMenuItems()
-    {
-        throw new \Exception('Implement task#3');
+	{
+		$menuItems = \App\Models\MenuItem::all();
+		
+		$groupId = $menuItems->groupBy(function ($item) {
+			return $item->parent_id ?? 'null';
+		});
+		
+		$depthTree = function($parentId = null) use (&$depthTree, $groupId) {
+			$result = [];
+			$key = $parentId ?? 'null';
+			
+			if ($groupId->has($key)) {
+				foreach ($groupId->get($key) as $item) {
+					$result[] = [
+						'id' => $item->id,
+						'name' => $item->name,
+						'url' => $item->url,
+						'parent_id' => $item->parent_id,
+						'created_at' => $item->created_at->toISOString(),
+						'updated_at' => $item->updated_at->toISOString(),
+						'children' => $depthTree($item->id)
+					];
+				}
+			}
+			
+			return $result;
+		};
+		
+		return $depthTree();
     }
 }
